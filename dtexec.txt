@@ -1,0 +1,5 @@
+----ejecuta este comando
+----para ejeuctar packages SSIS sin necesidas de agente de sql server
+----ejecutar en CMD
+
+c:\>dtexec /F "E:\Cursos\2020\SIPECOM\SQLSevrerAdmin072020\code\DBATest1\DBATest1\Package.dtsx"
