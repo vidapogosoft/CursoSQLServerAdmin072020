@@ -1,0 +1,64 @@
+# Environment PATH variable
+$Variables=$env:PATH 
+ 
+ 
+#Check the path existence of the SqlPackage.exe and print its status 
+ 
+IF (-not $Variables.Contains( "C:\Program Files (x86)\Microsoft SQL Server\140\DAC\bin")) 
+{ 
+write-host "SQLPackage.exe path is not found, Update the environment variable" 
+$ENV:PATH = $ENV:PATH + ";C:\Program Files (x86)\Microsoft SQL Server\140\DAC\bin;"  
+} 
+ 
+ 
+#the input parameters 
+ 
+$BackupDirectory="F:\PowerSQL\smartbackup\" 
+$DatabaseName="AdventureWorks2012" 
+#Source SQL Server Instance 
+$SourceServerName="HQDBT01" 
+#target SQL Instance
+$TargetserverName="HQDBT01\SQL2017" 
+ 
+ 
+#Prepare the target filename 
+$dir  = [io.path]::GetDirectoryName($BackupDirectory) 
+ 
+#set the filename, the database should be a part of the filename 
+$filename = "AdventureWorks2012_Rpt" 
+#extension must be dacpac 
+$ext = "dacpac" 
+# Prepare FULL PATH 
+$TargetFilePath  = "$dirName\$filename-$(get-date -f yyyyMMddhhmmss).$ext" 
+#print FULL file path 
+$TargetFilePath 
+ 
+ #Run the SqlPackage tool to extract the data
+ 
+SqlPackage /Action:Extract /SourceDatabaseName:$DatabaseName /SourceServerName:$SourceServerName /TargetFile:$TargetFilePath /p:IgnoreExtendedProperties=True  /p:ExtractAllTableData=FALSE  /p:TableData=dbo.Orders /p:TableData=dbo.Address
+ 
+ 
+#Get the latest file in a given directory 
+ 
+ 
+$NewestBacPacFile = Get-ChildItem -Path $dirName\$filename*.$ext | Sort-Object LastAccessTime -Descending | Select-Object -First 1 
+#print the latest bacfile name depending the name of the database 
+$file="$NewestBacPacFile" 
+ 
+$FILE 
+ 
+#If exists then drop the database 
+ 
+$dropTSQL= 
+@" 
+IF EXISTS (SELECT * FROM [sys].[databases] WHERE [name] = '$DatabaseName') DROP DATABASE $DatabaseName 
+"@ 
+#Using sqlcmd, execute the DropTSQL on the target instance. 
+ 
+SQLCMD -S $TargetserverName -U SA -P Api1401$ -Q $dropTSQL 
+ 
+ 
+#Publish the data in the target database using sqlpackage.exe
+ 
+ 
+SqlPackage.exe /a:publish /sf:$file /tsn:$TargetserverName /tdn:$DatabaseName /tu:SA /tp:Api1401$

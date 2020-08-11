@@ -1,0 +1,4 @@
+Para ejecutar cmd en jenkins
+
+cd E:\Cursos\2020\SIPECOM\SQLSevrerAdmin072020
+call bat1vpr.bat
